@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import type { JobProvider, JobSearchQuery, NormalizedJob } from "@/domain/job/types";
 import { MockJobProvider } from "./providers/mock.provider";
 import { IndeedProvider } from "./providers/indeed.provider";
@@ -57,7 +58,7 @@ class JobService {
           applyUrl: job.applyUrl,
           status: job.status,
           postedAt: job.postedAt,
-          rawData: job.rawData,
+          rawData: job.rawData as Prisma.InputJsonValue,
         },
         update: {
           title: job.title,
