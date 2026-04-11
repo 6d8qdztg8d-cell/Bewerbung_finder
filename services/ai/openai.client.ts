@@ -1,15 +1,15 @@
 import OpenAI from "openai";
 
-const globalForOpenAI = globalThis as unknown as {
-  openai: OpenAI | undefined;
-};
+let _client: OpenAI | null = null;
 
-export const openai =
-  globalForOpenAI.openai ??
-  new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForOpenAI.openai = openai;
+export function getOpenAIClient(): OpenAI {
+  if (!_client) {
+    _client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY ?? "placeholder-set-in-env",
+    });
+  }
+  return _client;
 }
+
+// Keep named export for convenience
+export { _client as openai };

@@ -1,19 +1,28 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM ?? "BewerbungsFinder <noreply@bewerbungsfinder.de>";
+
+let _resend: Resend | null = null;
+function getResendClient(): Resend {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY ?? "placeholder-set-in-env");
+  }
+  return _resend;
+}
 
 type SendParams = { to: string; subject: string; html: string };
 
 class EmailService {
-  private enabled = !!process.env.RESEND_API_KEY;
+  private get enabled() {
+    return !!process.env.RESEND_API_KEY;
+  }
 
   async send({ to, subject, html }: SendParams): Promise<void> {
     if (!this.enabled) {
       console.log(`[EmailService] Skipping email to ${to}: ${subject}`);
       return;
     }
-    await resend.emails.send({ from: FROM, to, subject, html });
+    await getResendClient().emails.send({ from: FROM, to, subject, html });
   }
 
   async sendNewMatches(to: string, userName: string, count: number): Promise<void> {
