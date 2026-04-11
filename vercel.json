@@ -1,0 +1,8 @@
+{
+  "crons": [
+    { "path": "/api/cron?task=FETCH_JOBS", "schedule": "0 7 * * 1-5" },
+    { "path": "/api/cron?task=ANALYZE_MATCHES", "schedule": "30 7 * * 1-5" },
+    { "path": "/api/cron?task=AUTO_APPLY", "schedule": "0 8 * * 1-5" },
+    { "path": "/api/cron?task=CLEANUP_EXPIRED_JOBS", "schedule": "0 0 * * *" }
+  ]
+}
