@@ -2,21 +2,6 @@ import { NextResponse } from "next/server";
 import { schedulerService } from "@/services/scheduler/scheduler.service";
 import type { SchedulerTask } from "@/services/scheduler/scheduler.types";
 
-/**
- * GET /api/cron?task=FETCH_JOBS
- *
- * Protected by CRON_SECRET environment variable.
- * Call with: Authorization: Bearer <CRON_SECRET>
- *
- * Vercel Cron example (vercel.json):
- * {
- *   "crons": [
- *     { "path": "/api/cron?task=FETCH_JOBS", "schedule": "0 8 * * *" },
- *     { "path": "/api/cron?task=ANALYZE_MATCHES", "schedule": "0 9 * * *" },
- *     { "path": "/api/cron?task=AUTO_APPLY", "schedule": "0 10 * * *" }
- *   ]
- * }
- */
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -33,8 +18,6 @@ export async function GET(req: Request) {
       const result = await schedulerService.run(task);
       return NextResponse.json({ result });
     }
-
-    // No task specified — run full pipeline
     const results = await schedulerService.runPipeline();
     return NextResponse.json({ results });
   } catch (err) {

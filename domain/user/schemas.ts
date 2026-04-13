@@ -28,18 +28,20 @@ export const userProfileSchema = z.object({
   languages: z.array(z.string()),
 });
 
+// Zod v4: use .optional() + handle defaults in form defaultValues
+// to avoid the `string | undefined` resolver mismatch with react-hook-form.
 export const userPreferenceSchema = z.object({
   jobTitles: z.array(z.string()),
   industries: z.array(z.string()),
   locations: z.array(z.string()),
   minSalary: z.number().optional(),
   maxSalary: z.number().optional(),
-  currency: z.string().default("EUR"),
+  currency: z.string().optional(),
   jobTypes: z.array(z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "FREELANCE", "INTERNSHIP"])),
   workModes: z.array(z.enum(["REMOTE", "HYBRID", "ONSITE"])),
-  minMatchScore: z.number().min(0).max(100).default(70),
-  maxApplicationsPerDay: z.number().min(1).max(50).default(5),
-  autoApply: z.boolean().default(false),
+  minMatchScore: z.number().min(0).max(100).optional(),
+  maxApplicationsPerDay: z.number().min(1).max(50).optional(),
+  autoApply: z.boolean().optional(),
   blacklistedCompanies: z.array(z.string()),
 });
 

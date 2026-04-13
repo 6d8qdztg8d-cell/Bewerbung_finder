@@ -36,25 +36,12 @@ class SchedulerService {
     return result;
   }
 
-  /**
-   * Run the full automation pipeline in sequence.
-   * Called by the cron API route.
-   */
   async runPipeline(): Promise<TaskResult[]> {
     const results: TaskResult[] = [];
-
-    // 1. Fetch new jobs for all users
     results.push(await this.run("FETCH_JOBS"));
-
-    // 2. Analyze pending matches with AI
     results.push(await this.run("ANALYZE_MATCHES"));
-
-    // 3. Auto-apply for eligible users
     results.push(await this.run("AUTO_APPLY"));
-
-    // 4. Clean up expired listings
     results.push(await this.run("CLEANUP_EXPIRED_JOBS"));
-
     return results;
   }
 }

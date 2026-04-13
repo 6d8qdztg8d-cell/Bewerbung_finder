@@ -2,36 +2,24 @@ import { db } from "@/lib/db";
 import { matchingService } from "@/services/matching/matching.service";
 import type { TaskResult } from "../scheduler.types";
 
-/**
- * Runs AI match analysis for all users who have PENDING matches.
- * Respects rate limits by processing users sequentially.
- */
 export async function analyzeMatchesTask(): Promise<TaskResult> {
   const start = Date.now();
   const errors: string[] = [];
   let processed = 0;
 
-  const usersWithPendingMatches = await db.jobMatch.groupBy({
+  const usersWithPending = await db.jobMatch.groupBy({
     by: ["userId"],
     where: { status: "PENDING" },
     _count: { id: true },
   });
 
-  for (const { userId } of usersWithPendingMatches) {
+  for (const { userId } of usersWithPending) {
     try {
-      const count = await matchingService.analyzeUserMatches(userId);
-      processed += count;
+      processed += await matchingService.analyzeUserMatches(userId);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`User ${userId}: ${msg}`);
+      errors.push(`User ${userId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
-  return {
-    task: "ANALYZE_MATCHES",
-    success: errors.length === 0,
-    processed,
-    errors,
-    durationMs: Date.now() - start,
-  };
+  return { task: "ANALYZE_MATCHES", success: errors.length === 0, processed, errors, durationMs: Date.now() - start };
 }
