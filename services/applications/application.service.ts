@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { aiService } from "@/services/ai/ai.service";
 import { documentService } from "@/services/documents/document.service";
+import { userService } from "@/services/users/user.service";
+import { emailService } from "@/services/notifications/email.service";
 import type { Application, ApplicationStatus } from "@prisma/client";
 import type { ApplicationWithRelations } from "@/domain/application/types";
 
@@ -22,11 +24,11 @@ class ApplicationService {
     if (!match) throw new Error("Match not found or not approved.");
     if (match.application) throw new Error("Application already exists for this match.");
 
-    const cv = await documentService.getActiveCV(userId);
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { name: true },
-    });
+    const [cv, apiKey, user] = await Promise.all([
+      documentService.getActiveCV(userId),
+      userService.getOpenAIKey(userId),
+      db.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    ]);
 
     let coverLetter: string | undefined;
 
@@ -37,7 +39,8 @@ class ApplicationService {
           match.jobListing.title,
           match.jobListing.company,
           match.jobListing.description,
-          user?.name ?? "Bewerber"
+          user?.name ?? "Bewerber",
+          apiKey
         );
       } catch (err) {
         console.error("[ApplicationService] Cover letter generation failed:", err);
@@ -89,6 +92,25 @@ class ApplicationService {
       },
     });
 
+    // Fire-and-forget email notification
+    const appWithJob = await db.application.findUnique({
+      where: { id },
+      include: {
+        jobMatch: { include: { jobListing: true } },
+        user: { select: { email: true, name: true } },
+      },
+    });
+    if (appWithJob?.user.email) {
+      emailService
+        .sendApplicationSubmitted(
+          appWithJob.user.email,
+          appWithJob.user.name ?? "dort",
+          appWithJob.jobMatch.jobListing.title,
+          appWithJob.jobMatch.jobListing.company
+        )
+        .catch(console.error);
+    }
+
     return updated;
   }
 
@@ -120,6 +142,28 @@ class ApplicationService {
         metadata: { previousStatus: app.status, newStatus: status },
       },
     });
+
+    // Notify user on notable status changes
+    if (["ACKNOWLEDGED", "INTERVIEW", "OFFER", "REJECTED"].includes(status)) {
+      const appWithJob = await db.application.findUnique({
+        where: { id },
+        include: {
+          jobMatch: { include: { jobListing: true } },
+          user: { select: { email: true, name: true } },
+        },
+      });
+      if (appWithJob?.user.email) {
+        emailService
+          .sendStatusUpdate(
+            appWithJob.user.email,
+            appWithJob.user.name ?? "dort",
+            appWithJob.jobMatch.jobListing.title,
+            appWithJob.jobMatch.jobListing.company,
+            status
+          )
+          .catch(console.error);
+      }
+    }
 
     return updated;
   }

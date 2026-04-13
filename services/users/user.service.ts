@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { UserProfileInput, UserPreferenceInput } from "@/domain/user/schemas";
+import type { UserProfileInput, UserPreferenceInput, ApiKeysInput } from "@/domain/user/schemas";
 import type { UserProfile, UserPreference } from "@prisma/client";
 
 export class UserService {
@@ -31,6 +31,37 @@ export class UserService {
 
   async getPreferences(userId: string): Promise<UserPreference | null> {
     return db.userPreference.findUnique({ where: { userId } });
+  }
+
+  async upsertApiKeys(userId: string, input: ApiKeysInput): Promise<void> {
+    const data: Record<string, string | undefined> = {};
+    if (input.openaiApiKey !== undefined) data.openaiApiKey = input.openaiApiKey || undefined;
+    if (input.rapidApiKey !== undefined) data.rapidApiKey = input.rapidApiKey || undefined;
+
+    await db.userProfile.upsert({
+      where: { userId },
+      create: { userId, firstName: "", lastName: "", ...data },
+      update: data,
+    });
+  }
+
+  async getApiKeys(userId: string): Promise<{ openaiApiKey: string | null; rapidApiKey: string | null }> {
+    const profile = await db.userProfile.findUnique({
+      where: { userId },
+      select: { openaiApiKey: true, rapidApiKey: true },
+    });
+    return {
+      openaiApiKey: profile?.openaiApiKey ?? null,
+      rapidApiKey: profile?.rapidApiKey ?? null,
+    };
+  }
+
+  async getOpenAIKey(userId: string): Promise<string | null> {
+    const profile = await db.userProfile.findUnique({
+      where: { userId },
+      select: { openaiApiKey: true },
+    });
+    return profile?.openaiApiKey ?? null;
   }
 }
 

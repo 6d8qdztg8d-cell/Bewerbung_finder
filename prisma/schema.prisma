@@ -151,6 +151,8 @@ model UserProfile {
   summary      String?  @db.Text
   skills       String[]
   languages    String[]
+  openaiApiKey String?  @db.Text
+  rapidApiKey  String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

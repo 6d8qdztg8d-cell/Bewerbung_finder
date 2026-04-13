@@ -1,4 +1,4 @@
-import { openai } from "./openai.client";
+import { getOpenAIClient } from "./openai.client";
 import { PROMPTS } from "./prompts";
 
 type MatchResult = {
@@ -18,8 +18,13 @@ type CVAnalysis = {
 };
 
 class AIService {
-  private async chat(prompt: string, model = "gpt-4o-mini"): Promise<string> {
-    const response = await openai.chat.completions.create({
+  private async chat(
+    prompt: string,
+    model = "gpt-4o-mini",
+    apiKey?: string | null
+  ): Promise<string> {
+    const client = getOpenAIClient(apiKey);
+    const response = await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.3,
@@ -29,7 +34,6 @@ class AIService {
   }
 
   private parseJSON<T>(raw: string): T {
-    // Strip potential markdown code fences
     const cleaned = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     return JSON.parse(cleaned) as T;
   }
@@ -37,10 +41,11 @@ class AIService {
   async scoreMatch(
     cvText: string,
     jobDescription: string,
-    requirements: string[]
+    requirements: string[],
+    apiKey?: string | null
   ): Promise<MatchResult> {
     const prompt = PROMPTS.matchScore(cvText, jobDescription, requirements);
-    const raw = await this.chat(prompt, "gpt-4o-mini");
+    const raw = await this.chat(prompt, "gpt-4o-mini", apiKey);
     return this.parseJSON<MatchResult>(raw);
   }
 
@@ -49,21 +54,16 @@ class AIService {
     jobTitle: string,
     company: string,
     jobDescription: string,
-    userName: string
+    userName: string,
+    apiKey?: string | null
   ): Promise<string> {
-    const prompt = PROMPTS.coverLetter(
-      cvText,
-      jobTitle,
-      company,
-      jobDescription,
-      userName
-    );
-    return this.chat(prompt, "gpt-4o");
+    const prompt = PROMPTS.coverLetter(cvText, jobTitle, company, jobDescription, userName);
+    return this.chat(prompt, "gpt-4o", apiKey);
   }
 
-  async analyzeCV(cvText: string): Promise<CVAnalysis> {
+  async analyzeCV(cvText: string, apiKey?: string | null): Promise<CVAnalysis> {
     const prompt = PROMPTS.cvAnalysis(cvText);
-    const raw = await this.chat(prompt, "gpt-4o-mini");
+    const raw = await this.chat(prompt, "gpt-4o-mini", apiKey);
     return this.parseJSON<CVAnalysis>(raw);
   }
 }

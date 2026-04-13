@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { aiService } from "@/services/ai/ai.service";
 import { documentService } from "@/services/documents/document.service";
+import { userService } from "@/services/users/user.service";
 import type { JobMatch } from "@prisma/client";
 
 type MatchWithJob = JobMatch & {
@@ -13,7 +14,11 @@ class MatchingService {
    * Uses the user's active CV against each job's description.
    */
   async analyzeUserMatches(userId: string): Promise<number> {
-    const cv = await documentService.getActiveCV(userId);
+    const [cv, apiKey] = await Promise.all([
+      documentService.getActiveCV(userId),
+      userService.getOpenAIKey(userId),
+    ]);
+
     if (!cv?.parsedText) {
       throw new Error("No active CV with parsed text found. Upload your CV first.");
     }
@@ -39,7 +44,8 @@ class MatchingService {
         const result = await aiService.scoreMatch(
           cv.parsedText,
           match.jobListing.description,
-          match.jobListing.requirements
+          match.jobListing.requirements,
+          apiKey
         );
 
         await db.jobMatch.update({

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { userService } from "@/services/users/user.service";
 import { PreferencesForm } from "@/components/settings/preferences-form";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { ApiKeysForm } from "@/components/settings/api-keys-form";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -31,6 +32,17 @@ export default async function SettingsPage() {
           Job-Präferenzen
         </h2>
         <PreferencesForm defaultValues={preferences} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-white border-b border-slate-800 pb-2">
+          API-Keys &amp; KI-Verbindung
+        </h2>
+        <p className="text-sm text-slate-400">
+          Konfiguriere deine API-Keys für OpenAI (KI) und RapidAPI (Job-Suche).
+          Keys werden sicher in deinem Profil gespeichert.
+        </p>
+        <ApiKeysForm />
       </section>
     </div>
   );

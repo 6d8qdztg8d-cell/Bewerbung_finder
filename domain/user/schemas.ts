@@ -43,7 +43,13 @@ export const userPreferenceSchema = z.object({
   blacklistedCompanies: z.array(z.string()),
 });
 
+export const apiKeysSchema = z.object({
+  openaiApiKey: z.string().optional().or(z.literal("")),
+  rapidApiKey: z.string().optional().or(z.literal("")),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type UserProfileInput = z.infer<typeof userProfileSchema>;
 export type UserPreferenceInput = z.infer<typeof userPreferenceSchema>;
+export type ApiKeysInput = z.infer<typeof apiKeysSchema>;
